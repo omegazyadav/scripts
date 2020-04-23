@@ -1,0 +1,14 @@
+#!/bin/bash
+
+kb2gb()
+{
+	echo "scale=3;$number/1024/1024" | bc
+}
+
+number=`grep MemTotal /proc/meminfo | awk '{print $2}'`
+mem=`kb2gb`
+
+echo "Ram size of the system is $mem GB. "
+echo ""
+
+
