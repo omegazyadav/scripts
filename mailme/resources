@@ -9,25 +9,31 @@ port = 587
 smtp_server = "smtp.gmail.com"
 sender_email = "tuxomega1@gmail.com"
 receiver_email = ["omegazyadav1@gmail.com"]
-#password = str(stdiomask.getpass("Enter the password:"))
+password = str(stdiomask.getpass("Enter the password:"))
 
 
 # System Information 
+
 ram_detail=os.popen("free -h | grep Mem | awk '{print $2, $3, $4}'").read().split()
 used_ram="Total RAM:"+ram_detail[0]
 free_ram="Free RAM:"+ram_detail[1] + '\n'
 
 # Process with maximum RAM and CPU usage. 
+
 processes=os.popen("ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n15").read()
 process_det="Processes holding maximum system resources:\n\n" + processes
 
 # disk utilities
 
 disk_detail=os.popen("df -H / | grep /dev | awk '{print $2, $3, $4, $5}'").read().split()
-total_storage="Totol Storage: \n"+str(disk_detail[0])
-disk_uesd="Used storage: \n" + str(disk_detail[1])
-free_disk="Available storage:\n" + str(disk_detail[2])
+total_storage="Disk Utilization in the system:\n\n    Totol Storage: "+str(disk_detail[0])
+disk_used="Used storage: " + str(disk_detail[1])
+free_disk="Available storage:" + str(disk_detail[2])
 
+# Threshosd for memory and disk utilization. 
+
+ram_free=os.popen("free -mt | grep Mem | awk '{print $4}'").read()
+disk_free=os.popen("df -H / | grep /dev | awk '{print $5}'").read().replace('%','')
 
 
 message = """
@@ -37,19 +43,21 @@ message = """
     Here are the details of the processes which are holding 
     system memory and resources. 
     
-    """+used_ram + '\n    ' + free_ram + '\n    '+process_det
+    """+used_ram + '\n    ' + free_ram + '\n    '+process_det+'\n    '+total_storage+'\n    '+disk_used+'\n    '+free_disk
     
 
-print(message)
 
-#context = ssl.create_default_context()
-#
-#with smtplib.SMTP(smtp_server, port) as server:
-#    server.ehlo()  # Can be omitted
-#    server.starttls(context=context)
-#    server.ehlo()  # Can be omitted
-#    server.login(sender_email, password)
-#
-#    for i in range(len(receiver_email)):
-#        server.sendmail(sender_email, receiver_email[i], message)
-#
+context = ssl.create_default_context()
+
+with smtplib.SMTP(smtp_server, port) as server:
+    server.ehlo()  # Can be omitted
+    server.starttls(context=context)
+    server.ehlo()  # Can be omitted
+    server.login(sender_email, password)
+
+    for i in range(len(receiver_email)):
+        if int(ram_free) < 100 or int(disk_free) >=40:
+            server.sendmail(sender_email, receiver_email[i], message)
+        else:
+            print("Resources hasnot crossed the limit. ")
+
