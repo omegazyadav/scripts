@@ -1,0 +1,146 @@
+#!/bin/bash
+echo 
+echo "Check for the latest stable kernel. " 
+echo ====================================
+
+VAR="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
+IR="/usr/src/kernels"
+
+ernel=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
+echo "Latest stable kernel in kernel.org is " $kernel
+echo 
+
+echo 
+echo "Download the latest stable kernel release frm kernel.org"
+echo =========================================================
+
+wget -c -P $DIR $VAR$kernel.tar.xz 
+
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Failed to download from the source. "
+    exit 0
+fi 
+
+echo 
+echo "Get the signature for the kernel."
+echo ==================================
+echo
+
+echo "Download the kernel signature."
+echo ===============================
+echo 
+wget -c -P $DIR $VAR$kernel.tar.sign 
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Couldnot download the signature from source. Exiting... "
+    exit 0
+fi
+
+echo
+echo "Jump into the /usr/src directory. "
+echo ==================================
+cd $DIR
+echo
+
+echo "Decompress the downloaded kernel."
+echo ==================================
+echo
+
+if [ -f "linux-$kernel.tar" ]
+then
+    continue
+else
+    unxz linux-$kernel.tar.xz
+fi
+
+if [ $? -ne 0 ]
+then
+        echo 
+        echo "Failed to decompress the kernel source. "
+        exit 0
+fi
+
+echo "Check for the kernel signature"
+echo ==============================
+echo 
+
+gpg2 --verify linux-$kernel.tar.sign
+
+if [ $? -ne 0 ]
+then
+    echo
+    echo "Kernel signature verification failed. "
+    exit 0
+fi
+
+echo "Untar the kernel source. "
+echo ==========================
+tar -xvf linux-$kernel.tar
+echo 
+
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Failed to extract the kernel source. Exiting... "
+    exit 0
+fi
+
+cd linux-$kernel
+echo 
+
+echo "Clean the repository if previously built with it. "
+echo ===================================================
+make clean && make mrproper
+echo 
+
+echo "Bring the configuraton file of the currently running kernel."
+echo =============================================================
+cat /lib/modules/$(uname -r)/config > .config
+echo
+
+echo "Make old and default config."
+echo =============================
+make olddefconfig
+echo
+
+echo "Build the kernel from Makefile with number of processor available."
+echo ===================================================================
+make -j $(nproc)
+echo 
+
+echo "Install the modules. "
+echo ======================
+make modules_install
+echo 
+
+echo "Install the kernel into the system. "
+echo =====================================
+make install 
+echo 
+
+echo "Update the grub configuration file for new kernel. "
+echo ====================================================
+grub2-mkconfig -o /boot/grub2/grub.cfg
+echo 
+
+echo "Set the newly installed kerenl as a default."
+echo ==============================================
+echo
+grubby --set-default /boot/vmlinuz-$kernel
+echo 
+
+echo "Cleanup the downloaded packages.  "
+echo ===================================
+rm $DIR/linux-$kernel.*
+
+echo "Latest stable kernel Installed into the system successfully. "
+read -p "Do you want to restart the system :[y/n] " OPT
+if [ $OPT == 'y' ]
+then 
+    reboot
+else
+    exit 0
+fi
