@@ -1,16 +1,22 @@
 #!/bin/bash
 
+echo 
 var="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
 kernel=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
-echo $kernel
+echo "Latest stable kernel in kernel.org is " $kernel
+echo 
 
-# Download the latest stable kernel release frm kernel.org
+echo 
+echo "Download the latest stable kernel release frm kernel.org"
+echo 
+
 wget -c $var$kernel.tar.xz
-if [ $? -eq 0 ]
+
+if [ $? -ne 0 ]
 then
     echo 
     echo "Downlod failed. "
-    echo
+    exit 0
 fi 
 
 echo 
@@ -19,13 +25,14 @@ echo
 
 # Download the kernel signature
 wget -c $var$kernel.tar.sign
-if [ $? -eq 0 ]
+if [ $? -ne 0 ]
 then
     echo 
     echo "Kernel signature download failed. "
-    echo 
+    exit 0
 fi
 
+echo 
 echo "Move the kernel to the /usr/src directory."
 
 mv -v linux-$kernel.tar.xz /usr/src/
@@ -41,11 +48,11 @@ echo
 
 unxz linux-$kernel.tar.xz
 
-if [ $? -eq 0 ]
+if [ $? -ne 0 ]
 then
         echo 
         echo "Kernel Decompressed successfully. "
-        echo 
+        exit 0
 fi
 
 echo "Check for the kernel signing."
@@ -53,19 +60,22 @@ echo
 
 gpg2 --verify linux-$kernel.tar.sign
 
-if [ $? -eq 0 ]
+if [ $? -ne 0 ]
 then
     echo
     echo "Kernel signature verification failed. "
-    echo 
+    exit 0
 fi
 
 echo "Untar the kernel source. "
 tar -xvf linux-$kernel.tar
-if [ $? -eq 0 ]
+echo 
+
+if [ $? -ne 0 ]
 then
-echo "Untar failed. "
-echo
+    echo 
+    echo "Untar failed. "
+    exit 0
 
 cd linux-$kernel
 echo 
