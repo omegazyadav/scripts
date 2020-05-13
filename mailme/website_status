@@ -1,0 +1,45 @@
+#!/bin/python3
+
+import stdiomask
+import smtplib, ssl
+import requests
+
+def mail_me(msg,password):
+    port = 587
+    smtp_server = "smtp.gmail.com"
+    sender_email = "tuxomega1@gmail.com"
+    receiver_email = ["omegazyadav1@gmail.com"]
+    context = ssl.create_default_context()
+   
+    message = " Hi! The site is :"
+    
+    message=message+msg
+
+    with smtplib.SMTP(smtp_server, port) as server:
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
+        server.login(sender_email, password)
+
+        for i in range(len(receiver_email)):
+            server.sendmail(sender_email, receiver_email[i], message)
+    
+# Website status check 
+
+if __name__=="__main__":
+
+    
+    urls=["https://chat.eydean.com","https://omegazyadav.github.io"]
+    password = str(stdiomask.getpass("Enter the password:"))
+    response_code = []
+
+    for url in urls:
+        res=requests.get(url)
+        res_code=res.status_code
+        response_code.append(res_code)
+
+    for i in response_code:
+        if i == 200:
+            msg="Site is down."
+            mail_me(msg,password)
+        
