@@ -4,9 +4,9 @@ echo "Check for the latest stable kernel. "
 echo ====================================
 
 VAR="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
-IR="/usr/src/kernels"
+DIR="/usr/src/kernels"
 
-ernel=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
+kernel=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
 echo "Latest stable kernel in kernel.org is " $kernel
 echo 
 
@@ -98,7 +98,8 @@ echo
 
 echo "Bring the configuraton file of the currently running kernel."
 echo =============================================================
-cat /lib/modules/$(uname -r)/config > .config
+#cat /lib/modules/$(uname -r)/config > .config
+cp $DIR/linux-$(uname -r)/.config . 
 echo
 
 echo "Make old and default config."
