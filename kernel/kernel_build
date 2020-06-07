@@ -1,4 +1,17 @@
 #!/bin/bash
+
+check_root()
+{
+    if [ $( id -u ) != 0 ]
+    then
+        echo "ERROR: You must be root to execute this program"
+        exit
+    fi
+}
+
+echo
+echo Checking the root permission for the system
+check_root
 echo 
 echo "Check for the latest stable kernel. " 
 echo ====================================
