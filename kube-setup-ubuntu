@@ -13,7 +13,11 @@
 #############################################################################
 
 
-VAR=$(ip -4 addr show enp2s0 | grep -oP "(?<=inet ).*(?=/)")
+# Check the ip address of the system 
+# ip -4 addr show enp2s0 | grep -oP "(?<=inet ).*(?=/)"
+
+VAR=$(hostname -I | awk '{print $1}')
+
 
 ## You need to have root access for running this script. 
 
@@ -37,8 +41,6 @@ apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 
-
-
 cat <<EOF > /etc/sysctl.d/k8.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -55,7 +57,9 @@ systemctl enable kubelet
 
 systemctl start kubelet
 
-echo '$VAR pc ' >> /etc/hosts
+hostnamectl set-hostname main-node 
+
+echo '$VAR main-node ' >> /etc/hosts
 
 kubeadm init --pod-network-cidr=10.10.0.0/16
 
@@ -64,8 +68,8 @@ sed -i 's/192.168.0.0\/16/10.10.0.0\/16/g' calico.yaml
 kubectl apply -f calico.yaml
 rm -rf calico.yaml
 
-mkdir -p /home/omega/.kube
-cp -i /etc/kubernetes/admin.conf /home/omega/.kube/admin.conf
-chown omega:omega /home/omega/.kube/admin.conf
+mkdir -p ~/.kube
+cp -i /etc/kubernetes/admin.conf ~/.kube/admin.conf
+chown $(id -u):$(id -u) ~/.kube/admin.conf
 
 echo '.............Kubernetes Setup and Ready to Use...............'
