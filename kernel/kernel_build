@@ -18,16 +18,20 @@ echo ====================================
 
 VAR="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
 DIR="/usr/src/kernels"
+VERSION=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
 
-kernel=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
-echo "Latest stable kernel in kernel.org is " $kernel
+echo "Latest stable kernel in kernel.org is " $VERSION
 echo 
 
 echo 
-echo "Download the latest stable kernel release frm kernel.org"
+echo "Download the latest stable kernel release from kernel.org"
 echo =========================================================
 
-wget -c -P $DIR $VAR$kernel.tar.xz 
+if [ -f "$DIR/linux-$VERSION.tar.xz" ]; then 
+    echo "File Exists"
+else
+    wget -c -P $DIR $VAR$VERSION.tar.xz 
+fi 
 
 if [ $? -ne 0 ]
 then
@@ -35,6 +39,7 @@ then
     echo "Failed to download from the source. "
     exit 0
 fi 
+
 
 echo 
 echo "Get the signature for the kernel."
@@ -44,7 +49,18 @@ echo
 echo "Download the kernel signature."
 echo ===============================
 echo 
-wget -c -P $DIR $VAR$kernel.tar.sign 
+
+if [ -f "$DIR/linux-$VERSION.tar.sign" ]; then 
+
+    echo 
+    echo "File Exists"
+
+else
+    echo 
+    wget -c -P $DIR $VAR$VERSION.tar.sign 
+    echo 
+fi 
+
 if [ $? -ne 0 ]
 then
     echo 
@@ -62,11 +78,11 @@ echo "Decompress the downloaded kernel."
 echo ==================================
 echo
 
-if [ -f "linux-$kernel.tar" ]
+if [ -f "linux-$VERSION.tar" ]
 then
-    continue
+    echo "Continueing...."
 else
-    unxz linux-$kernel.tar.xz
+    unxz linux-$VERSION.tar.xz
 fi
 
 if [ $? -ne 0 ]
@@ -80,7 +96,7 @@ echo "Check for the kernel signature"
 echo ==============================
 echo 
 
-gpg2 --verify linux-$kernel.tar.sign
+gpg2 --verify linux-$VERSION.tar.sign
 
 if [ $? -ne 0 ]
 then
@@ -91,7 +107,7 @@ fi
 
 echo "Untar the kernel source. "
 echo ==========================
-tar -xvf linux-$kernel.tar
+tar -xvf linux-$VERSION.tar
 echo 
 
 if [ $? -ne 0 ]
@@ -101,7 +117,7 @@ then
     exit 0
 fi
 
-cd linux-$kernel
+cd linux-$VERSION
 echo 
 
 echo "Clean the repository if previously built with it. "
@@ -112,13 +128,13 @@ echo
 echo "Bring the configuraton file of the currently running kernel."
 echo =============================================================
 #cat /lib/modules/$(uname -r)/config > .config
-cp $DIR/linux-$(uname -r)/.config . 
+cp $DIR/$(uname -r)/.config . 
 echo
 
-echo "Make old and default config."
-echo =============================
-make olddefconfig
-echo
+#echo "Make old and default config."
+#echo =============================
+#make olddefconfig
+#echo
 
 echo "Build the kernel from Makefile with number of processor available."
 echo ===================================================================
@@ -143,12 +159,12 @@ echo
 echo "Set the newly installed kerenl as a default."
 echo ==============================================
 echo
-grubby --set-default /boot/vmlinuz-$kernel
+grubby --set-default /boot/vmlinuz-$VERSION
 echo 
 
 echo "Cleanup the downloaded packages.  "
 echo ===================================
-rm $DIR/linux-$kernel.*
+rm $DIR/linux-$VERSION.*
 
 echo "Latest stable kernel Installed into the system successfully. "
 read -p "Do you want to restart the system :[y/n] " OPT
