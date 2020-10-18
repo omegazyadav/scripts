@@ -131,10 +131,10 @@ echo =============================================================
 cp $DIR/$(uname -r)/.config . 
 echo
 
-#echo "Make old and default config."
-#echo =============================
-#make olddefconfig
-#echo
+echo "Make old and default config."
+echo =============================
+make olddefconfig
+echo
 
 echo "Build the kernel from Makefile with number of processor available."
 echo ===================================================================
