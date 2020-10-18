@@ -1,0 +1,177 @@
+#!/bin/bash
+
+check_root()
+{
+    if [ $( id -u ) != 0 ]
+    then
+        echo "ERROR: You must be root to execute this program"
+        exit
+    fi
+}
+
+echo
+echo Checking the root permission for the system
+check_root
+echo 
+echo "Check for the latest mainline kernel. " 
+echo ====================================
+
+VAR="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
+DIR="/usr/src/kernels"
+VERSION=`curl -s https://www.kernel.org/ | grep -A1 'mainline:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
+
+echo "Latest mainline kernel in kernel.org is " $VERSION
+echo 
+
+echo 
+echo "Download the latest mainline kernel release from kernel.org"
+echo =========================================================
+
+if [ -f "$DIR/linux-$VERSION.tar.xz" ]; then 
+    echo "File Exists"
+else
+    wget -c -P $DIR $VAR$VERSION.tar.xz 
+fi 
+
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Failed to download from the source. "
+    exit 0
+fi 
+
+
+echo 
+echo "Get the signature for the kernel."
+echo ==================================
+echo
+
+echo "Download the kernel signature."
+echo ===============================
+echo 
+
+if [ -f "$DIR/linux-$VERSION.tar.sign" ]; then 
+
+    echo 
+    echo "File Exists"
+
+else
+    echo 
+    wget -c -P $DIR $VAR$VERSION.tar.sign 
+    echo 
+fi 
+
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Couldnot download the signature from source. Exiting... "
+    exit 0
+fi
+
+echo
+echo "Jump into the /usr/src directory. "
+echo ==================================
+cd $DIR
+echo
+
+echo "Decompress the downloaded kernel."
+echo ==================================
+echo
+
+if [ -f "linux-$VERSION.tar" ]
+then
+    echo "Continueing...."
+else
+    unxz linux-$VERSION.tar.xz
+fi
+
+if [ $? -ne 0 ]
+then
+        echo 
+        echo "Failed to decompress the kernel source. "
+        exit 0
+fi
+
+echo "Check for the kernel signature"
+echo ==============================
+echo 
+
+gpg2 --verify linux-$VERSION.tar.sign
+
+if [ $? -ne 0 ]
+then
+    echo
+    echo "Kernel signature verification failed. "
+    exit 0
+fi
+
+echo "Untar the kernel source. "
+echo ==========================
+tar -xvf linux-$VERSION.tar
+echo 
+
+if [ $? -ne 0 ]
+then
+    echo 
+    echo "Failed to extract the kernel source. Exiting... "
+    exit 0
+fi
+
+cd linux-$VERSION
+echo 
+
+echo "Clean the repository if previously built with it. "
+echo ===================================================
+make clean && make mrproper
+echo 
+
+echo "Bring the configuraton file of the currently running kernel."
+echo =============================================================
+#cat /lib/modules/$(uname -r)/config > .config
+cp $DIR/$(uname -r)/.config . 
+echo
+
+echo "Make old and default config."
+echo =============================
+#make olddefconfig
+make menuconfig
+echo
+
+echo "Build the kernel from Makefile with number of processor available."
+echo ===================================================================
+make -j $(nproc)
+echo 
+
+echo "Install the modules. "
+echo ======================
+make modules_install
+echo 
+
+echo "Install the kernel into the system. "
+echo =====================================
+make install 
+echo 
+
+echo "Update the grub configuration file for new kernel. "
+echo ====================================================
+grub2-mkconfig -o /boot/grub2/grub.cfg
+echo 
+
+echo "Set the newly installed kerenl as a default."
+echo ==============================================
+echo
+grubby --set-default /boot/vmlinuz-$VERSION
+echo 
+
+echo "Cleanup the downloaded packages.  "
+echo ===================================
+rm $DIR/linux-$VERSION.*
+
+echo "Latest mainline kernel Installed into the system successfully. "
+read -p "Do you want to restart the system :[y/n] " OPT
+if [ $OPT == 'y' ]
+then 
+    reboot
+else
+    exit 0
+fi
