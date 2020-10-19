@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 ## Install single plane kubernetes cluster in Fedora32
 
@@ -53,9 +54,6 @@ EOF
 yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 systemctl enable --now kubelet
 
-## Disable the swap memory 
-swapoff --all
-
 
 cat <<EOF > /etc/sysctl.d/k8.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -76,20 +74,32 @@ systemctl enable kubelet
 
 systemctl start kubelet
 
-#Enter you desired ip for master
-echo $VAR 'pc' >> /etc/hosts
+# Add the entries in /etc/hosts
+echo $VAR $(hostname) >> /etc/hosts
 
-#echo '192.168.1.20 node1 worker-node' >> /etc/hosts
-kubeadm init --pod-network-cidr=10.10.0.0/16
+## Disable the swap memory 
+swapoff --all
 
-kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+# Initialize the kubernetes master node with pod network CIDR block
+kubeadm init --pod-network-cidr=10.244.0.0/16
 
 mkdir -p ~/.kube
-cp -i /etc/kubernetes/admin.conf ~/.kube/admin.conf
-chown $(id -u):$(id -u) ~/.kube/admin.conf
+cp -i /etc/kubernetes/admin.conf ~/.kube/config
+chown $(id -u):$(id -u) ~/.kube/config
 
 # Control plane node isolation 
-kubectl taint nodes pc node-role.kubernetes.io/master-
+kubectl taint node $(hostname) key=value:NoSchedule
+kubectl taint nodes --all node-role.kubernetes.io/master-
+kubectl taint nodes $(hostname) key:NoSchedule-
+
+## Configure the calico CNI plugins
+#kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+
+# Configure the Kube-Flannel CNI Plugin
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+# Get the token for joining the main node with kubeadm 
+kubeadm token create --print-join-command
 
 
 echo '.............Kubernetes Setup and Ready to Use...............'
