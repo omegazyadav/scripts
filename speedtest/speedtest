@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import speedtest as st
+from datetime import datetime
+import sys,os, time                                 
+
+def get_speed():
+    speed_test = st.Speedtest()
+    speed_test.get_best_server()
+    
+    ping = speed_test.results.ping
+    download_mbs = round(speed_test.download()/(10**6),2)
+    upload_mbs   = round(speed_test.upload()/(10**6),2)
+
+    print("\nDownload Speed : {} Mbps.\nUpload Speed   : {} Mbps.\n".format(download_mbs,upload_mbs))
+
+def progress_gen(message):
+    i = 0
+    while True:
+        for x in range(0, 10):
+            dots = "." * x
+            sys.stdout.write("{}\r".format(message + dots))
+            i += 1
+            time.sleep(0.2)
+        sys.stdout.write("\033[K")
+        yield
+
+
+if __name__ == '__main__':
+    p = progress_gen("Waiting")
+
+    for x in range(1, 100):
+        next(p)
+        if x == 10:
+            break
+
+    get_speed()
+
