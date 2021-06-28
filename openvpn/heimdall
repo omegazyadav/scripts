@@ -1,0 +1,50 @@
+#!/bin/bash
+
+## Import the OpenVPN User config for importing the User Information
+config_import() {
+    openvpn3 config-import --config ~/openvpn.dev
+    exit
+}
+
+## List all the imported configs
+config_list() {
+    openvpn3 configs-list
+    exit
+}
+
+## List all the active sessions
+active_sessions() {
+    openvpn3 sessions-list
+    exit
+}
+
+## Connect to the VPN with the help of existing imported configs
+connect_vpn() {
+openvpn3 session-start --config ~/openvpn.dev
+exit
+}
+
+## Disconnect from the VPN Network
+disconnect_vpn() {
+openvpn3 session-manage --session-path $(openvpn3 sessions-list | awk 'NR==2 {print $2}') --disconnect
+exit
+}
+
+while [[ $# -gt 0 ]];
+do
+    case $1 in
+        import)
+            config_import;;
+        list)
+            config_list;;
+        sessions)
+            active_sessions;;
+        connect)
+            connect_vpn;;
+        disconnect)
+            disconnect_vpn;;
+        *)
+            echo "Invalid Option!!"
+            exit;;
+    esac
+done
