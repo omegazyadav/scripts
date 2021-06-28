@@ -1,8 +1,10 @@
 #!/bin/bash
 
+OVPN_FILE=$2
+
 ## Import the OpenVPN User config for importing the User Information
 config_import() {
-    openvpn3 config-import --config ~/openvpn.dev
+    openvpn3 config-import --config $OVPN_FILE
     exit
 }
 
@@ -20,7 +22,8 @@ active_sessions() {
 
 ## Connect to the VPN with the help of existing imported configs
 connect_vpn() {
-openvpn3 session-start --config ~/openvpn.dev
+
+openvpn3 session-start --config $OVPN_FILE
 exit
 }
 
