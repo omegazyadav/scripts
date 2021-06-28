@@ -2,6 +2,18 @@
 
 OVPN_FILE=$2
 
+usage() {
+    echo "Usage: heimdall {import|list|sessions|connect|disconnect}" >&2
+    echo
+    echo "   import             Import the openvpn config i.e.  heimdall import /path/to/config "
+    echo "   list               List all the imported config "
+    echo "   sessions           List all the active sessions for the OpenVPN"
+    echo "   connect            Connect to the OpenVPN server with user credentials i.e. heimdall connect /path/to/config"
+    echo "   disconnect         Disconnect the OpenVPN server i.e. heimdall disconnect"
+    echo
+    exit 1
+}
+
 ## Import the OpenVPN User config for importing the User Information
 config_import() {
     openvpn3 config-import --config $OVPN_FILE
@@ -36,6 +48,8 @@ exit
 while [[ $# -gt 0 ]];
 do
     case $1 in
+        -h|--help|help)
+            usage;;
         import)
             config_import;;
         list)
