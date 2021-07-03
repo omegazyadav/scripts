@@ -45,6 +45,12 @@ openvpn3 session-manage --session-path $(openvpn3 sessions-list | awk 'NR==2 {pr
 exit
 }
 
+# Display the Usage function if arguments are not provided.
+if [ $# -eq 0 ]; then
+    usage
+    exit 1
+fi
+
 while [[ $# -gt 0 ]];
 do
     case $1 in
