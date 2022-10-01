@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+function connect {
+    echo -n "Enter the SSID: "
+    read SSID
+    echo -n "Enter the PASSWORD: "
+    read PASSWORD
+
+    echo "Connecting to the $SSID ......"
+    nmcli device wifi con $SSID password $PASSWORD
+}
+
+function disconnect {
+    DEVICE_ID=`nmcli dev | awk 'NR==2&&NF=1'`
+    nmcli device disconnect $DEVICE_ID
+}
+
+
+case $1 in
+
+  connect)
+    connect
+    ;;
+
+  disconnect)
+    disconnect
+    ;;
+
+  *)
+    echo "Invalid option"
+    ;;
+esac
+
+
