@@ -1,0 +1,9 @@
+#!/bin/bash
+
+function display() {
+    PRIMARY_DISPLAY_ID=`xrandr --current | awk '/ connected primary/{print}' | awk 'NR==1&&NF=1'`
+    SECONDARY_DISPLAY_ID=`xrandr --current | awk '/ connected/{print}' | awk '!/ primary/{print}' | cut -c -5`
+    xrandr --output $PRIMARY_DISPLAY_ID --auto --right-of $SECONDARY_DISPLAY_ID
+}
+
+display
