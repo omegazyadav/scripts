@@ -16,7 +16,7 @@ echo
 echo "Check for the latest stable kernel. "
 echo ====================================
 
-VAR="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-"
+VAR="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-"
 DIR="/usr/src/kernels"
 VERSION=`curl -s https://www.kernel.org/ | grep -A1 'stable:' | grep -oP '(?<=strong>).*(?=</strong.*)' | awk 'NR==1{print $1}'`
 
@@ -27,11 +27,10 @@ echo
 echo "Download the latest stable kernel release from kernel.org"
 echo =========================================================
 
-if [ -f "$DIR/linux-$VERSION.tar.xz" ]; then
-    echo "File Exists"
-else
-
+if [ ! -f "$DIR/linux-$VERSION.tar.xz" ]; then
     wget -c -P $DIR $VAR$VERSION.tar.xz
+else
+    echo "File Exists"
 fi
 
 if [ $? -ne 0 ]
